@@ -1,0 +1,7 @@
+{
+  "name": "LuminaSpend AI",
+  "description": "Next-gen receipt scanning and financial intelligence powered by Gemini AI.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
