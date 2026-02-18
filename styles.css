@@ -525,6 +525,11 @@ body {
   border-left: 4px solid #3b82f6;
   position: relative;
   overflow: hidden;
+  transition: transform 0.3s ease;
+}
+
+.insight-card:hover {
+  transform: translateY(-5px);
 }
 
 .insight-card-bg-icon {
@@ -561,7 +566,7 @@ body {
   font-size: 0.75rem;
   line-height: 1rem;
   font-family: 'JetBrains Mono', monospace;
-  color: #4ade80;
+  color: #00f2ff;
   background-color: rgba(74, 222, 128, 0.1);
   width: fit-content;
   padding: 0.25rem 0.75rem;
@@ -574,6 +579,18 @@ body {
   font-size: 0.875rem;
   line-height: 1.25rem;
   padding: 1rem 0;
+}
+
+.insight-warning {
+  border-left: 4px solid #ff4d4d;
+}
+
+.insight-savings {
+  border-left: 4px solid #00ff88;
+}
+
+.insight-trend {
+  border-left: 4px solid #7000ff;
 }
 
 /* Refactored styles from ReceiptList.tsx */
@@ -609,6 +626,71 @@ body {
   align-items: center;
   justify-content: space-between;
   cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.receipt-card.expanded {
+  border-color: var(--accent-color, #00f2ff);
+  box-shadow: 0 0 20px rgba(0, 242, 255, 0.15);
+}
+
+.receipt-card-header-main {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.receipt-details-expand {
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  animation: slideDown 0.3s ease-out;
+}
+
+.category-group {
+  margin-bottom: 1rem;
+}
+
+.category-group-title {
+  color: #00f2ff;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  margin-bottom: 0.5rem;
+  opacity: 0.8;
+}
+
+.product-item {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.9rem;
+  padding: 4px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.product-qty {
+  color: rgba(255, 255, 255, 0.5);
+  margin-right: 10px;
+}
+
+.ai-summary-box {
+  background: rgba(0, 242, 255, 0.05);
+  padding: 10px;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+  font-style: italic;
+  font-size: 0.85rem;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .receipt-card-main {
@@ -827,17 +909,52 @@ body {
 
 .scan-beam {
   position: absolute;
-  top: 0; right: 0; bottom: 0; left: 0;
-  background-image: linear-gradient(to bottom, transparent, rgba(59, 130, 246, 0.2), transparent);
-  height: 25%;
+  top: 0;
+  left: 0;
   width: 100%;
-  border-bottom: 2px solid #60a5fa;
-  box-shadow: 0 0 20px #60a5fa;
-  animation: scan-beam-anim 2s infinite;
+  height: 4px;
+  background: linear-gradient(to right,
+      transparent,
+      var(--accent-color, #00f2ff),
+      /* Электрический синий */
+      transparent);
+  box-shadow: 0 0 15px var(--accent-color, #00f2ff),
+    0 0 25px var(--accent-color, #00f2ff);
+  z-index: 10;
+  animation: scan-move 2s linear infinite;
 }
 @keyframes scan-beam-anim {
   0% { transform: translateY(-25%); }
   100% { transform: translateY(125%); }
+}
+
+@keyframes scan-move {
+  0% {
+    top: 0%;
+  }
+
+  50% {
+    top: 100%;
+  }
+
+  100% {
+    top: 0%;
+  }
+}
+
+/* Пульсация текста обработки */
+.animate-spin {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .scanner-grid-overlay {

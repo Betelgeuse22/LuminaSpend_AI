@@ -41,7 +41,9 @@ export const Dashboard: React.FC<DashboardProps> = ({ receipts }) => {
   const { chartRef: areaChartRef, dimensions: areaChartDimensions } = useChartDimensions();
   const { chartRef: pieChartRef, dimensions: pieChartDimensions } = useChartDimensions();
 
-  const totalSpend = useMemo(() => receipts.reduce((sum, r) => sum + r.total, 0), [receipts]);
+  const totalSpend = useMemo(() => 
+  receipts.reduce((sum, r) => sum + (r.totalAmount || 0), 0), 
+[receipts]);
   
   const categoryData = useMemo(() => {
     const map = new Map<string, number>();
@@ -71,7 +73,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ receipts }) => {
           <div className="stat-card-header">
             <div>
               <p className="stat-card-label">Total Spend</p>
-              <h3 className="stat-card-value">${totalSpend.toFixed(2)}</h3>
+              <h3 className="stat-card-value">€{totalSpend.toFixed(2)}</h3>
             </div>
             <div className="stat-card-icon stat-card-icon-blue">
               <DollarSign size={20} />
@@ -182,12 +184,15 @@ export const Dashboard: React.FC<DashboardProps> = ({ receipts }) => {
             )}
           </div>
           <div className="legend-grid">
-             {categoryData.slice(0, 4).map((cat, i) => (
-                <div key={i} className="legend-item">
-                   <div className="legend-color-dot" style={{backgroundColor: COLORS[i % COLORS.length]}}></div>
-                   <span className="legend-label">{cat.name}</span>
-                </div>
-             ))}
+             {categoryData.map((cat, i) => (
+      <div key={i} className="legend-item">
+         <div 
+           className="legend-color-dot" 
+           style={{ backgroundColor: COLORS[i % COLORS.length] }}
+         ></div>
+         <span className="legend-label">{cat.name}</span>
+      </div>
+   ))}
           </div>
         </GlassCard>
       </div>

@@ -1,31 +1,40 @@
+// types.ts
+
+// Мы используем enum, чтобы Category существовал как объект в runtime
 export enum Category {
-  Groceries = "Groceries",
-  Dining = "Dining",
-  Electronics = "Electronics",
-  Utilities = "Utilities",
-  Transport = "Transport",
-  Clothing = "Clothing",
-  Health = "Health",
-  Entertainment = "Entertainment",
-  Other = "Other"
+  Sweets = 'сладости',
+  Drinks = 'напитки',
+  Fruits = 'фрукты',
+  Vegetables = 'овощи',
+  Meat = 'мясо',
+  Fish = 'рыба',
+  Dairy = 'молочные продукты',
+  Groceries = 'бакалея',
+  ReadyFood = 'готовая еда',
+  Household = 'бытовые товары',
+  Other = 'прочее'
 }
 
-export interface ReceiptItem {
+export interface Product {
+  id: string;
   name: string;
   price: number;
-  category: Category;
+  quantity: number;
+  category: Category; // Теперь это ссылается на enum
+  confidence: number;
+  discount?: number;
 }
 
 export interface Receipt {
   id: string;
   storeName: string;
   date: string;
-  total: number;
+  totalAmount: number;
   currency: string;
-  items: ReceiptItem[];
+  items: Product[];
+  taxAmount?: number;
   imageUrl?: string;
-  confidence: number;
-  aiInsight?: string;
+  aiSummary?: string;
 }
 
 export interface SpendingInsight {
@@ -33,9 +42,4 @@ export interface SpendingInsight {
   description: string;
   type: 'warning' | 'savings' | 'trend';
   impact?: string;
-}
-
-export interface UserSettings {
-  currency: string;
-  monthlyBudget: number;
 }

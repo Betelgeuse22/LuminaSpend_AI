@@ -1,10 +1,11 @@
 import React, { useState, useRef } from 'react';
 import { Camera, X, Loader2, Sparkles, ScanLine } from 'lucide-react';
 import { GlassCard } from './ui/GlassCard';
-import { parseReceiptImage } from '../services/geminiService';
+import { parseReceiptImage } from '../services/aiService';
 import { Receipt } from '../types';
 
-const generateId = () => Math.random().toString(36).substr(2, 9);
+// Вспомогательная функция для генерации ID
+const generateId = () => Math.random().toString(36).substring(2, 9);
 
 interface ScannerProps {
   onScanComplete: (receipt: Receipt) => void;
@@ -14,7 +15,7 @@ interface ScannerProps {
 export const Scanner: React.FC<ScannerProps> = ({ onScanComplete, onCancel }) => {
   const [image, setImage] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [status, setStatus] = useState<string>('Ready to scan');
+  const [status, setStatus] = useState<string>('Готов к работе');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -32,31 +33,38 @@ export const Scanner: React.FC<ScannerProps> = ({ onScanComplete, onCancel }) =>
     if (!image) return;
 
     setIsProcessing(true);
-    setStatus('Initializing Quantum Core...');
+    setStatus('Инициализация ИИ...');
     
     try {
-      setTimeout(() => setStatus('Extracting neural patterns...'), 1000);
-      setTimeout(() => setStatus('Categorizing molecular data...'), 2500);
+      // Имитация этапов для красоты интерфейса
+      setTimeout(() => setStatus('Анализ структуры чека...'), 1000);
+      setTimeout(() => setStatus('Распознавание товаров...'), 2500);
 
+      // Вызываем наш сервис (он обращается к Gemini)
       const data = await parseReceiptImage(image);
       
+      // МАППИНГ: Приводим данные от ИИ к нашему стандарту
       const newReceipt: Receipt = {
         id: generateId(),
-        storeName: data.storeName || "Unknown Store",
+        storeName: data.storeName || "Неизвестный магазин",
         date: data.date || new Date().toISOString().split('T')[0],
-        total: data.total || 0,
-        currency: data.currency || "USD",
-        items: data.items || [],
+        totalAmount: data.totalAmount || 0, // ИСПРАВЛЕНО
+        currency: data.currency || "RUB",
+        items: (data.items || []).map((item: any) => ({
+          ...item,
+          id: generateId(), // Добавляем ID каждому товару
+          confidence: item.confidence || 0.9 // Устанавливаем уверенность
+        })),
         imageUrl: image,
-        confidence: data.confidence || 0.8,
-        aiInsight: data.aiInsight
+        aiSummary: data.aiSummary // ИСПРАВЛЕНО
       };
 
-      setStatus('Complete');
+      setStatus('Готово!');
+      // Передаем результат в родительский компонент App.tsx
       onScanComplete(newReceipt);
     } catch (error) {
-      console.error(error);
-      setStatus('Scan Failed. Please try again.');
+      console.error("Ошибка сканирования:", error);
+      setStatus('Ошибка. Попробуйте другое фото.');
       setIsProcessing(false);
     }
   };
@@ -64,16 +72,13 @@ export const Scanner: React.FC<ScannerProps> = ({ onScanComplete, onCancel }) =>
   return (
     <div className="scanner-overlay">
       <GlassCard className="scanner-card">
-        <button 
-          onClick={onCancel}
-          className="scanner-close-button"
-        >
+        <button onClick={onCancel} className="scanner-close-button">
           <X size={24} />
         </button>
 
         <h2 className="scanner-title">
-          <ScanLine />
-          AI Receipt Scanner
+          <ScanLine className="scanner-title-icon" />
+          AI Сканер чеков
         </h2>
 
         {!image ? (
@@ -82,35 +87,32 @@ export const Scanner: React.FC<ScannerProps> = ({ onScanComplete, onCancel }) =>
               <Camera size={48} />
             </div>
             <div className="scanner-upload-text">
-              <p className="scanner-upload-main-text">Capture Receipt</p>
-              <p className="scanner-upload-sub-text">Take a clear photo for best AI results</p>
+              <p className="scanner-upload-main-text">Сфотографируйте чек</p>
+              <p className="scanner-upload-sub-text">Для лучшего результата сделайте четкое фото</p>
             </div>
             
-            <div className="scanner-button-group">
-              <button 
-                onClick={() => fileInputRef.current?.click()}
-                className="scanner-button"
-              >
-                <Camera size={20} />
-                Camera
-              </button>
-              <input 
-                type="file" 
-                ref={fileInputRef}
-                className="hidden-file-input" 
-                accept="image/*"
-                capture="environment"
-                onChange={handleFileChange}
-              />
-            </div>
-            
-            <p className="scanner-upload-info">Supports: JPG, PNG • Max 10MB</p>
+            <button 
+              onClick={() => fileInputRef.current?.click()}
+              className="scanner-button"
+            >
+              <Camera size={20} />
+              Выбрать фото
+            </button>
+            <input 
+              type="file" 
+              ref={fileInputRef}
+              className="hidden-file-input" 
+              accept="image/*"
+              capture="environment"
+              onChange={handleFileChange}
+            />
           </div>
         ) : (
           <div className="scanner-preview-container">
             <div className="scanner-image-preview-wrapper">
               <img src={image} alt="Preview" className="scanner-image-preview" />
               
+              {/* ТОТ САМЫЙ ЛАЗЕРНЫЙ ЛУЧ */}
               {isProcessing && <div className="scan-beam"></div>}
               
               <div className="scanner-grid-overlay"></div>
@@ -121,10 +123,9 @@ export const Scanner: React.FC<ScannerProps> = ({ onScanComplete, onCancel }) =>
                  <div className="scanner-processing-info">
                    <div className="processing-status-bar">
                       <span className="processing-status-text">
-                        <Loader2 size={14} />
-                        PROCESSING
+                        <Loader2 className="animate-spin" size={14} />
+                        ОБРАБОТКА
                       </span>
-                      <span>{Math.floor(Math.random() * 30) + 70}%</span>
                    </div>
                    <div className="progress-bar-bg">
                      <div className="progress-bar-fg"></div>
@@ -133,18 +134,12 @@ export const Scanner: React.FC<ScannerProps> = ({ onScanComplete, onCancel }) =>
                  </div>
                ) : (
                  <div className="scanner-actions-grid">
-                   <button 
-                     onClick={() => setImage(null)}
-                     className="scanner-retake-button"
-                   >
-                     Retake
+                   <button onClick={() => setImage(null)} className="scanner-retake-button">
+                     Заново
                    </button>
-                   <button 
-                     onClick={processImage}
-                     className="scanner-analyze-button"
-                   >
+                   <button onClick={processImage} className="scanner-analyze-button">
                      <Sparkles size={18} />
-                     Analyze
+                     Анализировать
                    </button>
                  </div>
                )}
