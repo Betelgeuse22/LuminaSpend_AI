@@ -1,17 +1,16 @@
 import React, { useState } from 'react';
 import { Receipt, Product, Category } from '../types';
 import { GlassCard } from './ui/GlassCard';
-import { Tag, Calendar, ChevronDown, ChevronUp, ShoppingBasket } from 'lucide-react';
+import { Tag, Calendar, ChevronDown, ChevronUp, ShoppingBasket, Trash2 } from 'lucide-react';
 
 interface ReceiptListProps {
   receipts: Receipt[];
+  onDelete: (id: string) => void;
 }
 
-export const ReceiptList: React.FC<ReceiptListProps> = ({ receipts }) => {
-  // Храним ID развернутого чека
+export const ReceiptList: React.FC<ReceiptListProps> = ({ receipts, onDelete }) => {
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
-  // Функция для группировки товаров по категориям
   const groupByCategory = (items: Product[]) => {
     return items.reduce((acc, item) => {
       if (!acc[item.category]) acc[item.category] = [];
@@ -33,11 +32,13 @@ export const ReceiptList: React.FC<ReceiptListProps> = ({ receipts }) => {
 
             return (
               <GlassCard 
-                key={receipt.id} 
-                className={`receipt-card glass-panel-hover ${isExpanded ? 'expanded' : ''}`}
-                onClick={() => setExpandedId(isExpanded ? null : receipt.id)}
+                key={receipt.id} // Ключ для основного списка
+                className={`receipt-card ${isExpanded ? 'expanded' : ''}`}
               >
-                <div className="receipt-card-header-main">
+                <div 
+                  className="receipt-card-header-main"
+                  onClick={() => setExpandedId(isExpanded ? null : receipt.id)}
+                >
                   <div className="receipt-card-main">
                     <div className="receipt-card-avatar">{receipt.storeName.charAt(0)}</div>
                     <div>
@@ -56,24 +57,38 @@ export const ReceiptList: React.FC<ReceiptListProps> = ({ receipts }) => {
                   </div>
                 </div>
 
-                {/* РАЗВОРАЧИВАЕМАЯ ПАНЕЛЬ С ТОВАРАМИ */}
                 {isExpanded && (
                   <div className="receipt-details-expand">
-                    <div className="ai-summary-box">
-                       <p>✨ {receipt.aiSummary || "AI проанализировал этот чек"}</p>
+                    <div className="flex-header-delete">
+                       <div className="ai-summary-box">
+                          <p>✨ {receipt.aiSummary || "Анализ завершен"}</p>
+                       </div>
+                       <button 
+                         className="delete-btn-neon"
+                         onClick={(e) => {
+                           e.stopPropagation();
+                           if (window.confirm('Удалить чек?')) onDelete(receipt.id);
+                         }}
+                       >
+                         <Trash2 size={18} />
+                       </button>
                     </div>
                     
+                    {/* КЛЮЧ ДЛЯ КАТЕГОРИЙ */}
                     {Object.entries(groups).map(([category, items]) => (
-                      <div key={category} className="category-group">
+                      <div key={`${receipt.id}-${category}`} className="category-group">
                         <h5 className="category-group-title">{category}</h5>
                         <div className="items-list">
+                          {/* КЛЮЧ ДЛЯ ТОВАРОВ */}
                           {items.map((item, idx) => (
-                            <div key={idx} className="product-item">
-                              <span className="product-name">{item.name}</span>
-                              <div className="product-details">
-                                <span className="product-qty">{item.quantity} шт.</span>
-                                <span className="product-price">{item.price} {receipt.currency}</span>
+                            <div key={`${receipt.id}-${category}-${idx}`} className="product-item">
+                              <div className="product-info-group">
+                                <span className="product-name">{item.name}</span>
+                                {item.quantity > 1 && (
+                                  <span className="product-qty">{item.quantity} шт.</span>
+                                )}
                               </div>
+                              <span className="product-price">{item.price} {receipt.currency}</span>
                             </div>
                           ))}
                         </div>

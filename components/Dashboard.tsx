@@ -27,9 +27,7 @@ const useChartDimensions = () => {
           }
         }
       });
-
       observer.observe(chartRef.current);
-
       return () => observer.disconnect();
     }
   }, []);
@@ -41,10 +39,12 @@ export const Dashboard: React.FC<DashboardProps> = ({ receipts }) => {
   const { chartRef: areaChartRef, dimensions: areaChartDimensions } = useChartDimensions();
   const { chartRef: pieChartRef, dimensions: pieChartDimensions } = useChartDimensions();
 
+  // Итоговая сумма
   const totalSpend = useMemo(() => 
-  receipts.reduce((sum, r) => sum + (r.totalAmount || 0), 0), 
-[receipts]);
+    receipts.reduce((sum, r) => sum + (r.totalAmount || 0), 0), 
+  [receipts]);
   
+  // Данные для круговой диаграммы (по категориям)
   const categoryData = useMemo(() => {
     const map = new Map<string, number>();
     receipts.forEach(r => {
@@ -55,147 +55,163 @@ export const Dashboard: React.FC<DashboardProps> = ({ receipts }) => {
     return Array.from(map.entries()).map(([name, value]) => ({ name, value }));
   }, [receipts]);
 
+  // Данные для графика трендов (по датам)
   const trendData = useMemo(() => {
     const sorted = [...receipts].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-    return sorted.map(r => ({ date: r.date.substring(5), amount: r.total }));
+    return sorted.map(r => ({ 
+      date: r.date.substring(5), 
+      amount: r.totalAmount // Исправлено с total на totalAmount
+    }));
   }, [receipts]);
 
+  // Самая затратная категория
   const topCategory = categoryData.length > 0 
     ? categoryData.reduce((prev, current) => (prev.value > current.value) ? prev : current)
-    : { name: 'None', value: 0 };
+    : { name: 'Нет данных', value: 0 };
 
   return (
     <div className="dashboard-container">
-      {/* Quick Stats Row */}
-      <div className="stats-grid">
-        <GlassCard glow className="stat-card">
-          <div className="glow-effect glow-blue"></div>
-          <div className="stat-card-header">
-            <div>
-              <p className="stat-card-label">Total Spend</p>
-              <h3 className="stat-card-value">€{totalSpend.toFixed(2)}</h3>
+      
+      {/* СЕКЦИЯ 1: Основные показатели */}
+      <section className="dashboard-section">
+        <span className="section-label">Финансовый обзор</span>
+        <div className="stats-grid">
+          <GlassCard glow className="stat-card">
+            <div className="glow-effect glow-blue"></div>
+            <div className="stat-card-header">
+              <div>
+                <p className="stat-card-label">Всего потрачено</p>
+                <h3 className="stat-card-value">€{totalSpend.toFixed(2)}</h3>
+              </div>
+              <div className="stat-card-icon stat-card-icon-blue">
+                <DollarSign size={20} />
+              </div>
             </div>
-            <div className="stat-card-icon stat-card-icon-blue">
-              <DollarSign size={20} />
+            <div className="stat-card-footer stat-card-footer-green">
+              <TrendingUp size={14} />
+              <span>+12% к прошлому месяцу</span>
             </div>
-          </div>
-          <div className="stat-card-footer stat-card-footer-green">
-            <TrendingUp size={14} />
-            <span>+12% vs last month</span>
-          </div>
-        </GlassCard>
+          </GlassCard>
 
-        <GlassCard className="stat-card">
-           <div className="glow-effect glow-purple"></div>
-           <div className="stat-card-header">
-            <div>
-              <p className="stat-card-label">Top Category</p>
-              <h3 className="stat-card-value-small">{topCategory.name}</h3>
+          <GlassCard className="stat-card">
+            <div className="glow-effect glow-purple"></div>
+            <div className="stat-card-header">
+              <div>
+                <p className="stat-card-label">Топ категория</p>
+                <h3 className="stat-card-value-small">{topCategory.name}</h3>
+              </div>
+              <div className="stat-card-icon stat-card-icon-purple">
+                <ShoppingBag size={20} />
+              </div>
             </div>
-            <div className="stat-card-icon stat-card-icon-purple">
-              <ShoppingBag size={20} />
-            </div>
-          </div>
-          <p className="stat-card-footer-p">
-             ${topCategory.value.toFixed(2)} spent
-          </p>
-        </GlassCard>
+            <p className="stat-card-footer-p">
+              €{topCategory.value.toFixed(2)} потрачено
+            </p>
+          </GlassCard>
 
-        <GlassCard className="stat-card">
-           <div className="glow-effect glow-orange"></div>
-           <div className="stat-card-header">
-            <div>
-              <p className="stat-card-label">Receipts</p>
-              <h3 className="stat-card-value">{receipts.length}</h3>
+          <GlassCard className="stat-card">
+            <div className="glow-effect glow-orange"></div>
+            <div className="stat-card-header">
+              <div>
+                <p className="stat-card-label">Обработано чеков</p>
+                <h3 className="stat-card-value">{receipts.length}</h3>
+              </div>
+              <div className="stat-card-icon stat-card-icon-orange">
+                <Calendar size={20} />
+              </div>
             </div>
-            <div className="stat-card-icon stat-card-icon-orange">
-              <Calendar size={20} />
+            <div className="stat-card-footer stat-card-footer-gray">
+              <span>Последний: {receipts[0]?.date || 'N/A'}</span>
             </div>
-          </div>
-          <div className="stat-card-footer stat-card-footer-gray">
-            <span>Last scan: {receipts[0]?.date || 'N/A'}</span>
-          </div>
-        </GlassCard>
-      </div>
+          </GlassCard>
+        </div>
+      </section>
 
-      {/* Charts Row */}
-      <div className="charts-grid">
-        
-        <GlassCard className="chart-card">
-          <div className="chart-header">
-            <h3 className="chart-title">Spending Trend</h3>
-            <button className="chart-action">View Report</button>
-          </div>
-          <div ref={areaChartRef} className="chart-content-wrapper">
-            {trendData.length > 0 && areaChartDimensions.width > 0 && areaChartDimensions.height > 0 ? (
-              <ResponsiveContainer width={areaChartDimensions.width} height={areaChartDimensions.height}>
-                <AreaChart data={trendData}>
-                  <defs>
-                    <linearGradient id="colorAmount" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3}/>
-                      <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
-                    </linearGradient>
-                  </defs>
-                  <Tooltip 
-                    contentStyle={{ backgroundColor: '#0f172a', borderColor: '#1e293b', borderRadius: '8px', color: '#fff' }}
-                    itemStyle={{ color: '#3b82f6' }}
-                  />
-                  <XAxis dataKey="date" stroke="#475569" tick={{fontSize: 12}} />
-                  <Area type="monotone" dataKey="amount" stroke="#3b82f6" strokeWidth={3} fillOpacity={1} fill="url(#colorAmount)" />
-                </AreaChart>
-              </ResponsiveContainer>
-            ) : (
-               <div className="chart-placeholder">
-                 <p>No data available</p>
-               </div>
-            )}
-          </div>
-        </GlassCard>
-
-        <GlassCard className="chart-card">
-          <h3 className="chart-title" style={{marginBottom: '1.5rem'}}>Category Breakdown</h3>
-          <div ref={pieChartRef} className="chart-content-wrapper-pie">
-            {categoryData.length > 0 && pieChartDimensions.width > 0 && pieChartDimensions.height > 0 ? (
-              <>
-                 <div className="pie-center-label">
-                    <div className="pie-center-label-inner">
-                       <p className="pie-center-label-top">Top</p>
-                       <p className="pie-center-label-bottom">{topCategory.name}</p>
-                    </div>
-                 </div>
-                 <ResponsiveContainer width={pieChartDimensions.width} height={pieChartDimensions.height}>
-                  <PieChart>
-                    <Pie
-                      data={categoryData}
-                      innerRadius={60}
-                      outerRadius={80}
-                      paddingAngle={5}
-                      dataKey="value"
-                    >
-                      {categoryData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} stroke="rgba(0,0,0,0)" />
-                      ))}
-                    </Pie>
-                  </PieChart>
+      {/* СЕКЦИЯ 2: Визуальный анализ */}
+      <section className="dashboard-section">
+        <span className="section-label">Аналитика расходов</span>
+        <div className="charts-grid">
+          
+          {/* График трендов */}
+          <GlassCard className="chart-card">
+            <div className="chart-header">
+              <h3 className="chart-title">Динамика трат</h3>
+              <button className="chart-action">Отчет</button>
+            </div>
+            <div ref={areaChartRef} className="chart-content-wrapper">
+              {trendData.length > 0 && areaChartDimensions.width > 0 && areaChartDimensions.height > 0 ? (
+                <ResponsiveContainer width={areaChartDimensions.width} height={areaChartDimensions.height}>
+                  <AreaChart data={trendData}>
+                    <defs>
+                      <linearGradient id="colorAmount" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3}/>
+                        <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
+                      </linearGradient>
+                    </defs>
+                    <Tooltip 
+                      contentStyle={{ backgroundColor: '#0f172a', borderColor: '#1e293b', borderRadius: '8px', color: '#fff' }}
+                      itemStyle={{ color: '#3b82f6' }}
+                    />
+                    <XAxis dataKey="date" stroke="#475569" tick={{fontSize: 12}} />
+                    <Area type="monotone" dataKey="amount" stroke="#3b82f6" strokeWidth={3} fillOpacity={1} fill="url(#colorAmount)" />
+                  </AreaChart>
                 </ResponsiveContainer>
-              </>
-            ) : (
-               <div className="chart-placeholder-pie">No categories yet</div>
-            )}
-          </div>
-          <div className="legend-grid">
-             {categoryData.map((cat, i) => (
-      <div key={i} className="legend-item">
-         <div 
-           className="legend-color-dot" 
-           style={{ backgroundColor: COLORS[i % COLORS.length] }}
-         ></div>
-         <span className="legend-label">{cat.name}</span>
-      </div>
-   ))}
-          </div>
-        </GlassCard>
-      </div>
+              ) : (
+                <div className="chart-placeholder">
+                  <p>Нет данных для анализа</p>
+                </div>
+              )}
+            </div>
+          </GlassCard>
+
+          {/* Круговая диаграмма */}
+          <GlassCard className="chart-card">
+            <h3 className="chart-title" style={{marginBottom: '1.5rem'}}>Распределение по категориям</h3>
+            <div ref={pieChartRef} className="chart-content-wrapper-pie">
+              {categoryData.length > 0 && pieChartDimensions.width > 0 && pieChartDimensions.height > 0 ? (
+                <>
+                  <div className="pie-center-label">
+                    <div className="pie-center-label-inner">
+                      <p className="pie-center-label-top">Топ</p>
+                      <p className="pie-center-label-bottom">{topCategory.name}</p>
+                    </div>
+                  </div>
+                  <ResponsiveContainer width={pieChartDimensions.width} height={pieChartDimensions.height}>
+                    <PieChart>
+                      <Pie
+                        data={categoryData}
+                        innerRadius={60}
+                        outerRadius={80}
+                        paddingAngle={5}
+                        dataKey="value"
+                      >
+                        {categoryData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} stroke="rgba(0,0,0,0)" />
+                        ))}
+                      </Pie>
+                    </PieChart>
+                  </ResponsiveContainer>
+                </>
+              ) : (
+                <div className="chart-placeholder-pie">Добавьте чеки</div>
+              )}
+            </div>
+            
+            {/* Легенда */}
+            <div className="legend-grid">
+              {categoryData.map((cat, i) => (
+                <div key={i} className="legend-item">
+                  <div 
+                    className="legend-color-dot" 
+                    style={{ backgroundColor: COLORS[i % COLORS.length] }}
+                  ></div>
+                  <span className="legend-label">{cat.name}</span>
+                </div>
+              ))}
+            </div>
+          </GlassCard>
+        </div>
+      </section>
     </div>
   );
 };

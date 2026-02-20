@@ -7,21 +7,79 @@ import { InsightsPanel } from './components/InsightsPanel';
 import { Receipt } from './types';
 import { MOCK_RECEIPTS } from './constants';
 import { LayoutGrid, List, Scan, Settings, Bot } from 'lucide-react';
+import { supabase } from './lib/supabase';
+import { deleteReceiptFromDb } from './services/aiService';
 
 const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'dashboard' | 'history' | 'insights'>('dashboard');
   const [showScanner, setShowScanner] = useState(false);
   const [receipts, setReceipts] = useState<Receipt[]>([]);
 
+  const fetchReceipts = async () => {
+    const { data, error } = await supabase
+    .from('receipts')
+     .select('*')
+     .order('transaction_date', { ascending: false });
+
+    if (error) {
+      console.error('Error fetching receipts:', error);
+    } else {
+     const formattedData = data.map(r => ({
+      id: r.id,
+      storeName: r.store_name,
+      date: r.transaction_date,
+      totalAmount: r.total_amount,
+      currency: r.currency,
+      items: r.items,
+      aiSummary: r.ai_summary
+    }));
+    setReceipts(formattedData);
+    }
+  };
+
+  const handleDeleteReceipt = async (id: string) => {
+  // 1. Пытаемся удалить из базы
+  const success = await deleteReceiptFromDb(id);
+  
+  if (success) {
+    // 2. Если в базе удалилось, убираем из стейта на экране
+    setReceipts(prev => prev.filter(r => r.id !== id));
+  } else {
+    alert('Не удалось удалить чек из базы данных.');
+  }
+};
+
+  useEffect(() => {
+    fetchReceipts()
+  }, []);
+
   useEffect(() => {
     setReceipts(MOCK_RECEIPTS);
   }, []);
 
-  const handleScanComplete = (newReceipt: Receipt) => {
-    setReceipts(prev => [newReceipt, ...prev]);
+  const handleScanComplete = async (newReceipt: Partial<Receipt>) => {
+  const { data, error } = await supabase
+    .from('receipts')
+    .insert([
+      {
+        store_name: newReceipt.storeName,
+        transaction_date: newReceipt.date,
+        total_amount: newReceipt.totalAmount,
+        currency: newReceipt.currency,
+        items: newReceipt.items,
+        ai_summary: newReceipt.aiSummary
+      }
+    ])
+    .select();
+
+  if (!error) {
+    fetchReceipts(); // Обновляем список
     setShowScanner(false);
     setActiveTab('history');
-  };
+  } else {
+    console.error('Save error:', error);
+  }
+};
 
   const getNavButtonClasses = (tabName: 'dashboard' | 'history' | 'insights') => {
     return `nav-button ${activeTab === tabName ? 'active' : ''}`;
@@ -69,7 +127,7 @@ const App: React.FC = () => {
                     <p className="page-subtitle">Archive of processed transactions.</p>
                  </div>
               </div>
-              <ReceiptList receipts={receipts} />
+              <ReceiptList receipts={receipts} onDelete={handleDeleteReceipt} />
             </div>
           )}
           
