@@ -1176,3 +1176,46 @@ padding: 1.5rem;
   box-shadow: 0 0 20px rgba(59, 130, 246, 0.15);
   border-color: rgba(59, 130, 246, 0.3);
 }
+
+
+.month-group {
+  margin-bottom: 2rem;
+}
+
+.month-group-title {
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--accent-blue, #3b82f6);
+  margin: 1.5rem 0 1rem 0.5rem;
+  opacity: 0.8;
+  /* Делаем первую букву заглавной, если локаль выдает с маленькой */
+  display: flex;
+  align-items: center;
+}
+
+.month-group-title::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, rgba(59, 130, 246, 0.2), transparent);
+  margin-left: 1rem;
+}
+
+.recharts-area-path {
+  cursor: pointer;
+}
+
+.recharts-tooltip-cursor {
+  stroke: rgba(59, 130, 246, 0.2);
+  cursor: pointer;
+}
+
+.recharts-wrapper {
+  cursor: pointer !important;
+}
+
+.recharts-active-dot {
+  filter: drop-shadow(0 0 5px rgba(59, 130, 246, 0.8));
+}

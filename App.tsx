@@ -53,9 +53,6 @@ const App: React.FC = () => {
     fetchReceipts()
   }, []);
 
-  useEffect(() => {
-    setReceipts(MOCK_RECEIPTS);
-  }, []);
 
   const handleScanComplete = async (newReceipt: Partial<Receipt>) => {
   const { data, error } = await supabase
@@ -84,7 +81,39 @@ const App: React.FC = () => {
   const getNavButtonClasses = (tabName: 'dashboard' | 'history' | 'insights') => {
     return `nav-button ${activeTab === tabName ? 'active' : ''}`;
   };
-  
+
+ const navigateToReceipt = (id: string) => {
+  setActiveTab('history');
+
+  // Увеличим задержку до 150-200мс, чтобы React точно успел переключить таб
+  setTimeout(() => {
+    const element = document.getElementById(`receipt-${id}`);
+    
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      
+      // Находим кликабельную шапку
+      const header = element.querySelector('.receipt-card-header-clickable');
+      
+      // Проверяем, не развернут ли он уже (по классу или стейту мы не можем, 
+      // но можем проверить наличие блока деталей)
+      const details = element.querySelector('.receipt-details-expand');
+      
+      if (header && !details) {
+        (header as HTMLElement).click();
+      }
+
+      // Эффект "неонового мигания" для привлечения внимания
+      element.style.transition = "box-shadow 0.5s ease";
+      element.style.boxShadow = "0 0 30px rgba(59, 130, 246, 0.8)";
+      setTimeout(() => {
+        element.style.boxShadow = "";
+      }, 2000);
+    } else {
+      console.warn(`Receipt element with id receipt-${id} not found in DOM`);
+    }
+  }, 200);
+};
   return (
     <HashRouter>
       <div className="app-container">
@@ -112,7 +141,7 @@ const App: React.FC = () => {
                  <h2 className="page-title">Financial Overview</h2>
                  <p className="page-subtitle">Your real-time spending intelligence.</p>
                </div>
-               <Dashboard receipts={receipts} />
+               <Dashboard receipts={receipts} onNavigate={navigateToReceipt}/>
                <div className="insights-container">
                   <InsightsPanel receipts={receipts} />
                </div>
